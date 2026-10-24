@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync/atomic"
 )
 
@@ -13,7 +14,8 @@ type apiConfig struct {
 }
 
 type Chirp struct {
-	Body string `json:"body"`
+	Body      string `json:"body"`
+	CleanBody string `json:"cleaned_body"`
 }
 
 func (cfg *apiConfig) getFileserverHits() int32 {
@@ -43,6 +45,21 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(payload)
+}
+func containsBadWord(c string) string {
+	words := strings.Split(c, " ")
+	for i, word := range words {
+		if _, ok := badWords[strings.ToLower(word)]; ok {
+			words[i] = "****"
+		}
+	}
+	return strings.Join(words, " ")
+}
+
+var badWords = map[string]struct{}{
+	"kerfuffle": {},
+	"sharbert":  {},
+	"fornax":    {},
 }
 
 func main() {
@@ -90,11 +107,13 @@ func main() {
 			respondWithError(w, http.StatusInternalServerError, "Something went wrong")
 			return
 		}
+		chirp.CleanBody = containsBadWord(chirp.Body)
+
 		if len(chirp.Body) > 140 {
 			respondWithError(w, http.StatusBadRequest, "Chirp is too long")
 			return
 		}
-		respondWithJSON(w, http.StatusOK, map[string]interface{}{"valid": true})
+		respondWithJSON(w, http.StatusOK, map[string]interface{}{"body": chirp.Body, "cleaned_body": chirp.CleanBody})
 	})
 
 	log.Fatal(server.ListenAndServe())

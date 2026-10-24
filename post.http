@@ -4,5 +4,5 @@ POST http://localhost:8080/api/validate_chirp
 Content-Type: application/json
 
 {
-    "body": "This is an opinion I need to share with the world"
+    "body": "This is a fornax opinion I need to share with the world"
 }

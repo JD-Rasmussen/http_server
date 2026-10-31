@@ -1,5 +1,8 @@
 package main
 
+//goose postgres "postgresql://postgres:1234@localhost:5432/chirpy"
+//psql "postgresql://postgres:1234@localhost:5432/chirpy"
+
 import (
 	"encoding/json"
 	"fmt"

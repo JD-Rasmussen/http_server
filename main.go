@@ -1,19 +1,23 @@
 package main
 
-//goose postgres "postgresql://postgres:1234@localhost:5432/chirpy"
-//psql "postgresql://postgres:1234@localhost:5432/chirpy"
-
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"sync/atomic"
+
+	"github.com/jd-rasmussen/http_server/internal/database"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	db             *database.Queries
 }
 
 type Chirp struct {
@@ -66,7 +70,25 @@ var badWords = map[string]struct{}{
 }
 
 func main() {
-	apiCfg := &apiConfig{}
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		log.Fatal("DB_URL environment variable is not set")
+	}
+
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal("Error connecting to the database: ", err)
+	}
+
+	dbQueries := database.New(db)
+
+	apiCfg := &apiConfig{db: dbQueries}
 
 	mux := http.ServeMux{}
 
